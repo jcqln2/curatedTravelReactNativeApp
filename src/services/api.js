@@ -12,10 +12,12 @@ export const fetchCityCoords = async (city) => {
   return await res.json();
 };
 
-// Fetches products for the fashion tab [cite: 35]
-export const fetchFashionItems = async (categoryId) => {
-  let url = `https://api.escuelajs.co/api/v1/products?limit=20&offset=0`;
-  if (categoryId) url += `&categoryId=${categoryId}`;
+// Fetches products for the fashion tab (Fake Store API – real product images)
+export const fetchFashionItems = async (categorySlug) => {
+  const base = 'https://fakestoreapi.com/products';
+  const url = categorySlug
+    ? `${base}/category/${encodeURIComponent(categorySlug)}`
+    : base;
   const res = await fetch(url);
   return await res.json();
 };

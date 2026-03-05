@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { fetchFashionItems } from '../services/api';
 
+// category slug matches Fake Store API: empty = all, else /category/{slug}
 const CATEGORIES = [
-  {id: "", label: "ALL"}, 
-  {id: "4", label: "SHOES"}, 
-  {id: "1", label: "TOPS & BOTTOMS"}, 
-  {id: "5", label: "ACCESSORIES & BAGS"}
+  { id: '', label: 'ALL' },
+  { id: "men's clothing", label: "MEN'S" },
+  { id: "women's clothing", label: "WOMEN'S" },
+  { id: 'jewelery', label: 'JEWELERY' },
+  { id: 'electronics', label: 'ELECTRONICS' },
 ];
 
 export default function FashionTab() {
@@ -17,10 +19,10 @@ export default function FashionTab() {
 
   useEffect(() => { loadFashion(""); }, []);
 
-  const loadFashion = async (id) => {
+  const loadFashion = async (categorySlug) => {
     setLoading(true);
     try {
-      const data = await fetchFashionItems(id);
+      const data = await fetchFashionItems(categorySlug);
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Style API Error:", err);
@@ -38,16 +40,20 @@ export default function FashionTab() {
   );
 
   const renderItem = ({ item }) => {
-    let imageUrl = item.images && item.images.length > 0 ? item.images[0] : "";
-    if (imageUrl.startsWith("[") || imageUrl.includes('"')) {
-      imageUrl = imageUrl.replace(/[\[\]"]/g, "");
+    // Fake Store API uses `image` (single URL); support `images[0]` for other sources
+    let imageUrl =
+      item.image ||
+      (item.images && item.images.length > 0 ? item.images[0] : '');
+    if (typeof imageUrl === 'string' && (imageUrl.startsWith('[') || imageUrl.includes('"'))) {
+      imageUrl = imageUrl.replace(/[\[\]"]/g, '');
     }
+    const hasImage = imageUrl && imageUrl.startsWith('http');
 
     return (
       <View style={styles.itemCard}>
-        <Image 
-          source={{ uri: imageUrl }} 
-          style={styles.itemImg} 
+        <Image
+          source={{ uri: hasImage ? imageUrl : 'https://placehold.co/400x400/F5F5F0/C5A059?text=Style' }}
+          style={styles.itemImg}
           defaultSource={{ uri: 'https://placehold.co/400x400/F5F5F0/C5A059?text=Style' }}
         />
         <View style={styles.itemInfo}>
