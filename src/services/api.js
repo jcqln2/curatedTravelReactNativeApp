@@ -52,15 +52,16 @@ function normalizeKolzsticksProduct(p) {
   };
 }
 
-export const fetchFashionItems = async (categorySlug) => {
+export const fetchFashionItems = async (categorySlug, skip = 0) => {
   const slug = categorySlug || '';
 
   // 1) Try DummyJSON (works in Snack; returns real product images)
   try {
     const dummySlug = DUMMYJSON_CATEGORIES[slug] ?? slug;
+    const limit = dummySlug ? 20 : 24;
     const url = dummySlug
-      ? `${DUMMYJSON_BASE}/category/${encodeURIComponent(dummySlug)}?limit=20`
-      : `${DUMMYJSON_BASE}?limit=24`;
+      ? `${DUMMYJSON_BASE}/category/${encodeURIComponent(dummySlug)}?limit=${limit}&skip=${skip}`
+      : `${DUMMYJSON_BASE}?limit=${limit}&skip=${skip}`;
     const res = await fetch(url);
     const data = await res.json();
     const list = data?.products;
@@ -76,7 +77,8 @@ export const fetchFashionItems = async (categorySlug) => {
     const list = Array.isArray(raw) ? raw : [];
     const category = KOLZSTICKS_CATEGORIES[slug];
     const filtered = category ? list.filter((p) => p.category === category) : list;
-    const slice = (filtered.length > 0 ? filtered : list).slice(0, 24);
+    const pool = filtered.length > 0 ? filtered : list;
+    const slice = pool.slice(skip, skip + 24);
     return slice.map(normalizeKolzsticksProduct);
   } catch (_) {}
 

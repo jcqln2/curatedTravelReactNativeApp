@@ -19,16 +19,24 @@ export default function FashionTab() {
 
   useEffect(() => { loadFashion(""); }, []);
 
-  const loadFashion = async (categorySlug) => {
+  const loadFashion = async (categorySlug, skip = 0) => {
     setLoading(true);
     try {
-      const data = await fetchFashionItems(categorySlug);
+      let data = await fetchFashionItems(categorySlug, skip);
+      if (data.length === 0 && skip > 0) {
+        data = await fetchFashionItems(categorySlug, 0);
+      }
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Style API Error:", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRefresh = () => {
+    const randomSkip = Math.floor(Math.random() * 80);
+    loadFashion(selectedCat, randomSkip);
   };
 
   // Visual Feedback for Empty States
@@ -80,7 +88,7 @@ export default function FashionTab() {
         ))}
       </View>
 
-      <TouchableOpacity style={styles.refreshBtn} onPress={() => loadFashion(selectedCat)}>
+      <TouchableOpacity style={styles.refreshBtn} onPress={handleRefresh}>
         <Text style={styles.refreshBtnText}>REFRESH THE EDIT</Text>
       </TouchableOpacity>
 
