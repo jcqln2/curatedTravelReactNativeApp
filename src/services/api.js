@@ -12,12 +12,17 @@ export const fetchCityCoords = async (city) => {
   return await res.json();
 };
 
-// Fetches products for the fashion tab (Fake Store API – real product images)
+// Fetches products for the fashion tab (Fake Store API – real product images).
+// Uses CORS proxy so requests work in Expo Snack / web preview.
+const FASHION_BASE = 'https://fakestoreapi.com/products';
+const CORS_PROXY = 'https://corsproxy.io/?';
+
 export const fetchFashionItems = async (categorySlug) => {
-  const base = 'https://fakestoreapi.com/products';
-  const url = categorySlug
-    ? `${base}/category/${encodeURIComponent(categorySlug)}`
-    : base;
+  const path = categorySlug
+    ? `${FASHION_BASE}/category/${encodeURIComponent(categorySlug)}`
+    : FASHION_BASE;
+  const url = CORS_PROXY + encodeURIComponent(path);
   const res = await fetch(url);
-  return await res.json();
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
 };
