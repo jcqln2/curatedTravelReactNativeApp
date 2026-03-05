@@ -6,7 +6,7 @@ import { fetchCityCoords } from '../services/api';
 
 const DEFAULT_CITY_IMG = "https://images.unsplash.com/photo-1488085061387-422e29b40080?w=600";
 
-export default function TravelTab() {
+export default function TravelTab({ onDestinationChange }) {
   const [city, setCity] = useState("");
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -23,7 +23,9 @@ export default function TravelTab() {
         const { latitude, longitude, name, country } = geoData.results[0];
         const wxRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`);
         const wxData = await wxRes.json();
-        setWeather({ ...wxData.current_weather, name, country });
+        const weatherPayload = { ...wxData.current_weather, name, country };
+        setWeather(weatherPayload);
+        onDestinationChange?.(weatherPayload);
       }
     } catch (err) {
       console.error(err);

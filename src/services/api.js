@@ -30,6 +30,10 @@ const FASHION_ONLY_SLUGS = [
   'sunglasses',
 ];
 
+// Climate-based category sets (when user has chosen a travel destination)
+const WARM_SLUGS = ['tops', 'womens-dresses', 'sunglasses', 'mens-shoes', 'womens-shoes', 'womens-jewellery'];
+const COLD_SLUGS = ['mens-shirts', 'mens-watches', 'womens-watches', 'womens-bags', 'womens-dresses', 'womens-shoes'];
+
 // Pill slug -> one or more DummyJSON category slugs to fetch
 const PILL_TO_DUMMY_SLUGS = {
   '': FASHION_ONLY_SLUGS,
@@ -65,10 +69,12 @@ async function fetchDummyCategory(categorySlug, limit = 30) {
   return Array.isArray(data?.products) ? data.products : [];
 }
 
-export const fetchFashionItems = async (categorySlug, skip = 0) => {
+export const fetchFashionItems = async (categorySlug, skip = 0, climate = null) => {
   const slug = (categorySlug || '').toLowerCase().replace(/\s+/g, '');
   const pillSlug = slug === "men'sclothing" ? 'mens' : slug === "women'sclothing" ? 'womens' : slug;
-  const dummySlugs = PILL_TO_DUMMY_SLUGS[pillSlug] ?? (pillSlug ? [pillSlug] : FASHION_ONLY_SLUGS);
+  let dummySlugs = PILL_TO_DUMMY_SLUGS[pillSlug] ?? (pillSlug ? [pillSlug] : FASHION_ONLY_SLUGS);
+  if (pillSlug === '' && climate === 'warm') dummySlugs = WARM_SLUGS;
+  else if (pillSlug === '' && climate === 'cold') dummySlugs = COLD_SLUGS;
 
   // 1) DummyJSON: fetch only from allowed fashion categories
   try {

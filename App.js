@@ -7,6 +7,11 @@ import FashionTab from './src/components/FashionTab';
 
 export default function App() {
   const [tab, setTab] = useState("glam");
+  const [travelContext, setTravelContext] = useState(null);
+
+  const handleDestinationChange = (context) => {
+    setTravelContext(context ? { destination: context.name, country: context.country, temperature: context.temperature, weathercode: context.weathercode } : null);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -30,8 +35,8 @@ export default function App() {
 
         <ScrollView contentContainerStyle={styles.scrollBody}>
           {tab === "glam" && <GlamTab />}
-          {tab === "travel" && <TravelTab />}
-          {tab === "fashion" && <FashionTab />}
+          {tab === "travel" && <TravelTab onDestinationChange={handleDestinationChange} />}
+          {tab === "fashion" && <FashionTab travelContext={travelContext} />}
         </ScrollView>
       </View>
     </SafeAreaView>

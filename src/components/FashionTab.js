@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { fetchFashionItems } from '../services/api';
+import { WARM_CLIMATE_THRESHOLD } from '../constants/data';
 
 // Pills: apparel, shoes, accessories, jewellery for men and women only (see api.js PILL_TO_DUMMY_SLUGS)
 const CATEGORIES = [
@@ -13,19 +14,31 @@ const CATEGORIES = [
   { id: 'womens', label: "WOMEN'S" },
 ];
 
-export default function FashionTab() {
+export default function FashionTab({ travelContext }) {
   const [items, setItems] = useState([]);
   const [selectedCat, setSelectedCat] = useState("");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => { loadFashion(""); }, []);
+  const climate = travelContext?.temperature != null
+    ? (travelContext.temperature >= WARM_CLIMATE_THRESHOLD ? 'warm' : 'cold')
+    : null;
+
+  useEffect(() => {
+    if (travelContext?.destination != null) {
+      setSelectedCat("");
+      loadFashion("", 0);
+    } else {
+      loadFashion("", 0);
+    }
+  }, [travelContext?.destination, climate]);
 
   const loadFashion = async (categorySlug, skip = 0) => {
     setLoading(true);
     try {
-      let data = await fetchFashionItems(categorySlug, skip);
+      const climateForFetch = categorySlug === '' ? climate : null;
+      let data = await fetchFashionItems(categorySlug, skip, climateForFetch);
       if (data.length === 0 && skip > 0) {
-        data = await fetchFashionItems(categorySlug, 0);
+        data = await fetchFashionItems(categorySlug, 0, categorySlug === '' ? climate : null);
       }
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -76,6 +89,11 @@ export default function FashionTab() {
   return (
     <View style={styles.container}>
       <Text style={styles.label}>THE COLLECTIONS</Text>
+      {travelContext?.destination && (
+        <Text style={styles.destinationLabel}>
+          Styled for {travelContext.destination} — {climate === 'warm' ? 'warm' : 'cold'} weather
+        </Text>
+      )}
       <View style={styles.pillContainer}>
         {CATEGORIES.map(cat => (
           <TouchableOpacity 
@@ -112,6 +130,7 @@ export default function FashionTab() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   label: { fontSize: 9, letterSpacing: 2, color: '#A6A6A2', marginBottom: 15 },
+  destinationLabel: { fontSize: 11, color: '#C5A059', letterSpacing: 1, marginBottom: 12 },
   pillContainer: { flexDirection: 'row', gap: 10, marginBottom: 20, flexWrap: 'wrap' },
   pill: { paddingVertical: 8, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: 'transparent' },
   activePill: { borderBottomColor: '#C5A059' },

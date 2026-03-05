@@ -8,6 +8,9 @@ export const WEATHER_DESC = {0:"Clear Sky",1:"Mainly Clear",2:"Partly Cloudy",3:
 
 export const GLAM_TIPS = {0:"Perfect for a dewy, sun-kissed look.",1:"Ideal lighting for a natural glow.",2:"Soft lighting — perfect for a fresh face.",3:"Sophisticated matte look for the office.",45:"Setting spray is essential for humidity.",51:"Waterproof mascara is your best friend today.",82:"Opt for a chic no-makeup makeup look.",95:"Bold lip for indoor meetings; stay dry."};
 
+// Temperature (°C) above which we show "warm" fashion edit; below = "cold" edit
+export const WARM_CLIMATE_THRESHOLD = 18;
+
 export const CITY_IMAGES = {
   "paris":"https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=600",
   "tokyo":"https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=600",
