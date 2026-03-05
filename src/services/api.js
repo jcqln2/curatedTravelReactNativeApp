@@ -12,26 +12,32 @@ export const fetchCityCoords = async (city) => {
   return await res.json();
 };
 
-// Fashion tab: try DummyJSON first (CORS-friendly, real images), then Kolzsticks (GitHub Pages).
+// Fashion tab: only shorts/pants (tops, shirts, dresses), accessories, shoes, jewellery – men & women.
 const DUMMYJSON_BASE = 'https://dummyjson.com/products';
 const KOLZSTICKS_JSON = 'https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/products.json';
 
-// DummyJSON category slugs for our pills (ALL = fetch all products)
-const DUMMYJSON_CATEGORIES = {
-  '': null,
-  "mens": 'mens-shirts',
-  "womens": 'womens-dresses',
-  "jewelery": 'womens-jewellery',
-  "electronics": 'smartphones',
-};
+// Allowed DummyJSON categories (apparel, shoes, accessories, jewellery only – no electronics/beauty/etc.)
+const FASHION_ONLY_SLUGS = [
+  'mens-shirts',
+  'mens-shoes',
+  'mens-watches',
+  'womens-dresses',
+  'womens-bags',
+  'womens-jewellery',
+  'womens-shoes',
+  'womens-watches',
+  'tops',
+  'sunglasses',
+];
 
-// Kolzsticks category names for fallback
-const KOLZSTICKS_CATEGORIES = {
-  '': null,
-  "mens": 'Fashion & Apparel',
-  "womens": 'Fashion & Apparel',
-  "jewelery": 'Fashion & Apparel',
-  "electronics": 'Electronics & Gadgets',
+// Pill slug -> one or more DummyJSON category slugs to fetch
+const PILL_TO_DUMMY_SLUGS = {
+  '': FASHION_ONLY_SLUGS,
+  shoes: ['mens-shoes', 'womens-shoes'],
+  accessories: ['mens-watches', 'womens-watches', 'womens-bags', 'sunglasses'],
+  jewelery: ['womens-jewellery'],
+  mens: ['mens-shirts', 'mens-shoes', 'mens-watches'],
+  womens: ['womens-dresses', 'womens-shoes', 'womens-bags', 'womens-jewellery', 'womens-watches'],
 };
 
 function normalizeDummyProduct(p) {
@@ -52,33 +58,39 @@ function normalizeKolzsticksProduct(p) {
   };
 }
 
-export const fetchFashionItems = async (categorySlug, skip = 0) => {
-  const slug = categorySlug || '';
+async function fetchDummyCategory(categorySlug, limit = 30) {
+  const url = `${DUMMYJSON_BASE}/category/${encodeURIComponent(categorySlug)}?limit=${limit}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return Array.isArray(data?.products) ? data.products : [];
+}
 
-  // 1) Try DummyJSON (works in Snack; returns real product images)
+export const fetchFashionItems = async (categorySlug, skip = 0) => {
+  const slug = (categorySlug || '').toLowerCase().replace(/\s+/g, '');
+  const pillSlug = slug === "men'sclothing" ? 'mens' : slug === "women'sclothing" ? 'womens' : slug;
+  const dummySlugs = PILL_TO_DUMMY_SLUGS[pillSlug] ?? (pillSlug ? [pillSlug] : FASHION_ONLY_SLUGS);
+
+  // 1) DummyJSON: fetch only from allowed fashion categories
   try {
-    const dummySlug = DUMMYJSON_CATEGORIES[slug] ?? slug;
-    const limit = dummySlug ? 20 : 24;
-    const url = dummySlug
-      ? `${DUMMYJSON_BASE}/category/${encodeURIComponent(dummySlug)}?limit=${limit}&skip=${skip}`
-      : `${DUMMYJSON_BASE}?limit=${limit}&skip=${skip}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const list = data?.products;
-    if (Array.isArray(list) && list.length > 0) {
-      return list.map(normalizeDummyProduct);
+    let merged;
+    if (dummySlugs.length === 1) {
+      merged = await fetchDummyCategory(dummySlugs[0], 50);
+    } else {
+      const results = await Promise.all(dummySlugs.map((s) => fetchDummyCategory(s, 25)));
+      merged = results.flat();
     }
+    const slice = merged.slice(skip, skip + 24);
+    if (slice.length > 0) return slice.map(normalizeDummyProduct);
   } catch (_) {}
 
-  // 2) Fallback: Kolzsticks (static JSON on GitHub Pages, CORS-friendly)
+  // 2) Fallback: Kolzsticks – Fashion & Apparel only (no electronics)
   try {
     const res = await fetch(KOLZSTICKS_JSON);
     const raw = await res.json();
     const list = Array.isArray(raw) ? raw : [];
-    const category = KOLZSTICKS_CATEGORIES[slug];
-    const filtered = category ? list.filter((p) => p.category === category) : list;
-    const pool = filtered.length > 0 ? filtered : list;
-    const slice = pool.slice(skip, skip + 24);
+    const pool = list.filter((p) => p.category === 'Fashion & Apparel');
+    const source = pool.length > 0 ? pool : list;
+    const slice = source.slice(skip, skip + 24);
     return slice.map(normalizeKolzsticksProduct);
   } catch (_) {}
 

@@ -3,13 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { fetchFashionItems } from '../services/api';
 
-// category slug matches Fake Store API: empty = all, else /category/{slug}
+// Pills: apparel, shoes, accessories, jewellery for men and women only (see api.js PILL_TO_DUMMY_SLUGS)
 const CATEGORIES = [
   { id: '', label: 'ALL' },
-  { id: "men's clothing", label: "MEN'S" },
-  { id: "women's clothing", label: "WOMEN'S" },
-  { id: 'jewelery', label: 'JEWELERY' },
-  { id: 'electronics', label: 'ELECTRONICS' },
+  { id: 'shoes', label: 'SHOES' },
+  { id: 'accessories', label: 'ACCESSORIES' },
+  { id: 'jewelery', label: 'JEWELLERY' },
+  { id: 'mens', label: "MEN'S" },
+  { id: 'womens', label: "WOMEN'S" },
 ];
 
 export default function FashionTab() {
