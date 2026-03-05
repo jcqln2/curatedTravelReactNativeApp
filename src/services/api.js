@@ -12,17 +12,73 @@ export const fetchCityCoords = async (city) => {
   return await res.json();
 };
 
-// Fetches products for the fashion tab (Fake Store API – real product images).
-// Uses CORS proxy so requests work in Expo Snack / web preview.
-const FASHION_BASE = 'https://fakestoreapi.com/products';
-const CORS_PROXY = 'https://corsproxy.io/?';
+// Fashion tab: try DummyJSON first (CORS-friendly, real images), then Kolzsticks (GitHub Pages).
+const DUMMYJSON_BASE = 'https://dummyjson.com/products';
+const KOLZSTICKS_JSON = 'https://kolzsticks.github.io/Free-Ecommerce-Products-Api/main/products.json';
+
+// DummyJSON category slugs for our pills (ALL = fetch all products)
+const DUMMYJSON_CATEGORIES = {
+  '': null,
+  "mens": 'mens-shirts',
+  "womens": 'womens-dresses',
+  "jewelery": 'womens-jewellery',
+  "electronics": 'smartphones',
+};
+
+// Kolzsticks category names for fallback
+const KOLZSTICKS_CATEGORIES = {
+  '': null,
+  "mens": 'Fashion & Apparel',
+  "womens": 'Fashion & Apparel',
+  "jewelery": 'Fashion & Apparel',
+  "electronics": 'Electronics & Gadgets',
+};
+
+function normalizeDummyProduct(p) {
+  return {
+    id: p.id,
+    title: p.title,
+    price: p.price,
+    image: (p.images && p.images[0]) || p.thumbnail || '',
+  };
+}
+
+function normalizeKolzsticksProduct(p) {
+  return {
+    id: p.id,
+    title: p.name,
+    price: (p.priceCents || 0) / 100,
+    image: p.image || '',
+  };
+}
 
 export const fetchFashionItems = async (categorySlug) => {
-  const path = categorySlug
-    ? `${FASHION_BASE}/category/${encodeURIComponent(categorySlug)}`
-    : FASHION_BASE;
-  const url = CORS_PROXY + encodeURIComponent(path);
-  const res = await fetch(url);
-  const data = await res.json();
-  return Array.isArray(data) ? data : [];
+  const slug = categorySlug || '';
+
+  // 1) Try DummyJSON (works in Snack; returns real product images)
+  try {
+    const dummySlug = DUMMYJSON_CATEGORIES[slug] ?? slug;
+    const url = dummySlug
+      ? `${DUMMYJSON_BASE}/category/${encodeURIComponent(dummySlug)}?limit=20`
+      : `${DUMMYJSON_BASE}?limit=24`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const list = data?.products;
+    if (Array.isArray(list) && list.length > 0) {
+      return list.map(normalizeDummyProduct);
+    }
+  } catch (_) {}
+
+  // 2) Fallback: Kolzsticks (static JSON on GitHub Pages, CORS-friendly)
+  try {
+    const res = await fetch(KOLZSTICKS_JSON);
+    const raw = await res.json();
+    const list = Array.isArray(raw) ? raw : [];
+    const category = KOLZSTICKS_CATEGORIES[slug];
+    const filtered = category ? list.filter((p) => p.category === category) : list;
+    const slice = (filtered.length > 0 ? filtered : list).slice(0, 24);
+    return slice.map(normalizeKolzsticksProduct);
+  } catch (_) {}
+
+  return [];
 };
